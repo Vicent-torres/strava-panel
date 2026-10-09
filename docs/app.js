@@ -174,6 +174,7 @@ function render() {
   renderStats(list, start);
   currentBins = buildBins(list, start);
   if (empty) return;
+  renderMap(list);
   renderVolume(currentBins);
   renderVolumeTable(currentBins);
   renderSports(list);
@@ -424,6 +425,79 @@ function renderActivities(list) {
     body.append(tr);
   }
   table.append(body);
+}
+
+// ---------- Mapa de recorridos ----------
+
+const ROUTE_COLOR = '#fc5200'; // naranja Strava
+let map = null;
+let routesLayer = null;
+
+// Decodifica el formato "polyline" de Google que usa Strava para los recorridos.
+function decodePolyline(str) {
+  const points = [];
+  let i = 0, lat = 0, lng = 0;
+  const next = () => {
+    let b, shift = 0, result = 0;
+    do {
+      b = str.charCodeAt(i++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+  while (i < str.length) {
+    lat += next();
+    lng += next();
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+  return points;
+}
+
+function setupMap() {
+  if (map || !window.L) return;
+  map = L.map('map', { preferCanvas: true, scrollWheelZoom: false });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+  routesLayer = L.featureGroup().addTo(map);
+  // con la rueda solo se hace zoom tras hacer clic en el mapa, para no atrapar el scroll de la página
+  map.on('click', () => map.scrollWheelZoom.enable());
+  map.on('mouseout', () => map.scrollWheelZoom.disable());
+}
+
+function renderMap(list) {
+  const box = $('map');
+  if (!window.L) {
+    box.replaceChildren(el('div', { class: 'map-empty' }, 'No se ha podido cargar el mapa.'));
+    return;
+  }
+  setupMap();
+  routesLayer.clearLayers();
+  box.querySelector('.map-empty')?.remove();
+
+  const withRoute = list.filter((a) => a.route);
+  // las más antiguas primero, para que las recientes queden encima
+  for (const a of [...withRoute].reverse()) {
+    const line = L.polyline(decodePolyline(a.route), { color: ROUTE_COLOR, weight: 2.5, opacity: 0.6 });
+    line.on('mouseover', () => line.setStyle({ weight: 5, opacity: 1 }).bringToFront());
+    line.on('mousemove', (e) => showTip(e.originalEvent.clientX, e.originalEvent.clientY - 4, fmtKm(a.distance), a.name, fullShortDate(a.d)));
+    line.on('mouseout', () => {
+      line.setStyle({ weight: 2.5, opacity: 0.6 });
+      hideTip();
+    });
+    routesLayer.addLayer(line);
+  }
+
+  const n = withRoute.length;
+  $('map-hint').textContent = n
+    ? `${n} ${n === 1 ? 'recorrido' : 'recorridos'} del periodo. Pasa el ratón por una ruta para ver cuál es.`
+    : 'No hay recorridos con GPS en este periodo.';
+
+  map.invalidateSize();
+  if (n) map.fitBounds(routesLayer.getBounds(), { padding: [24, 24] });
+  else if (!map._loaded) map.setView([40.4, -3.7], 5);
 }
 
 // ---------- Tooltip ----------

@@ -1,6 +1,6 @@
 // Descarga tus actividades de Strava y las guarda en docs/data/strava.json,
 // que es lo que lee el panel. Solo guarda salidas de ciclismo públicas
-// ("Todos") y nunca rutas, mapas, coordenadas ni pulsaciones.
+// ("Todos"), con su recorrido simplificado, y nunca pulsaciones.
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, loadEnv, setEnvVar } from './env.js';
@@ -39,6 +39,7 @@ const activities = all
     movingTime: a.moving_time,
     elevation: Math.round(a.total_elevation_gain || 0),
     kudos: a.kudos_count,
+    route: a.map?.summary_polyline || null, // recorrido completo (formato polyline de Google)
   }))
   .sort((x, y) => (x.date < y.date ? 1 : -1));
 

@@ -6,6 +6,7 @@
   <title>Panel deportivo</title>
   <meta name="description" content="Mis actividades deportivas de Strava en un panel.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='9' width='3' height='6' rx='1' fill='%232a78d6'/><rect x='6.5' y='4' width='3' height='11' rx='1' fill='%232a78d6'/><rect x='12' y='1' width='3' height='14' rx='1' fill='%232a78d6'/></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -51,6 +52,12 @@
 
     <section class="grid">
       <article class="card chart-card wide">
+        <h2>Mapa de recorridos</h2>
+        <p class="hint" id="map-hint">Todos los recorridos del periodo. Pasa el ratón por una ruta para ver cuál es.</p>
+        <div class="map" id="map"></div>
+      </article>
+
+      <article class="card chart-card wide">
         <h2 id="volume-title">Distancia por semana</h2>
         <p class="hint">Kilómetros de cada periodo. Pasa el ratón por encima para ver el detalle.</p>
         <div class="chart" id="volume-chart"></div>
@@ -80,10 +87,11 @@
 
     <p class="empty card" id="empty" hidden>No hay actividades en este periodo. Prueba con otro rango de fechas o deporte.</p>
 
-    <footer class="foot">Datos obtenidos de Strava. Solo se muestran salidas de ciclismo públicas, sin rutas ni mapas.</footer>
+    <footer class="foot">Datos obtenidos de Strava. Solo se muestran salidas de ciclismo públicas.</footer>
   </main>
 
   <div class="tooltip" id="tooltip" role="status" hidden></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

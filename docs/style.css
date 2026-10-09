@@ -29,6 +29,7 @@
     --series-hover: #86b6ef;
     --wash: rgba(57, 135, 229, 0.16);
   }
+  :root:not([data-theme="light"]) .map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.85) contrast(0.9); }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -43,6 +44,7 @@
   --series-hover: #86b6ef;
   --wash: rgba(57, 135, 229, 0.16);
 }
+:root[data-theme="dark"] .map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.85) contrast(0.9); }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); line-height: 1.45; }
@@ -92,6 +94,16 @@ button:focus-visible, select:focus-visible, summary:focus-visible, .hit:focus-vi
 .hero-value { font-size: 52px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; margin: 6px 0 4px; }
 .tile-value { font-size: 28px; font-weight: 600; margin-top: 6px; }
 .tile { display: flex; flex-direction: column; justify-content: space-between; }
+
+/* Mapa */
+.map { height: 460px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--page); z-index: 0; }
+.map .leaflet-control-attribution { font-size: 10px; background: var(--surface); color: var(--ink-2); }
+.map .leaflet-control-attribution a { color: var(--ink-2); }
+.map .leaflet-bar { border: 1px solid var(--border); box-shadow: none; }
+.map .leaflet-bar a { background: var(--surface); color: var(--ink); border-bottom-color: var(--border); }
+.map .leaflet-bar a:hover { background: var(--page); }
+.map .leaflet-tile-pane { filter: grayscale(0.85) contrast(0.95); } /* mapa apagado para que destaque el naranja */
+.map-empty { display: grid; place-items: center; height: 100%; color: var(--ink-2); font-size: 14px; }
 
 /* Gráficos */
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -166,4 +178,5 @@ td.muted { color: var(--muted); }
   .card { padding: 16px; }
   .sport-row { grid-template-columns: 92px 1fr; }
   .records, .wide .records { grid-template-columns: 1fr; }
+  .map { height: 340px; }
 }
