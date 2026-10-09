@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel deportivo</title>
+  <meta name="description" content="Mis actividades deportivas de Strava en un panel.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect x='1' y='9' width='3' height='6' rx='1' fill='%232a78d6'/><rect x='6.5' y='4' width='3' height='11' rx='1' fill='%232a78d6'/><rect x='12' y='1' width='3' height='14' rx='1' fill='%232a78d6'/></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div>
+        <h1 id="title">Panel deportivo</h1>
+        <p class="sub" id="synced"></p>
+      </div>
+    </header>
+
+    <p class="notice" id="sample-notice" hidden>
+      Estás viendo <strong>datos de ejemplo</strong>. Cuando conectes Strava aparecerán tus actividades.
+    </p>
+
+    <section class="filters" aria-label="Filtros">
+      <div class="segmented" id="ranges" role="group" aria-label="Periodo"></div>
+      <label class="select">
+        <span class="visually-hidden">Deporte</span>
+        <select id="sport"></select>
+      </label>
+    </section>
+
+    <section class="stats" aria-label="Resumen">
+      <div class="card hero">
+        <p class="label">Distancia</p>
+        <p class="hero-value" id="stat-distance">–</p>
+        <p class="hint" id="stat-period"></p>
+      </div>
+      <div class="card tile">
+        <p class="label">Actividades</p>
+        <p class="tile-value" id="stat-count">–</p>
+      </div>
+      <div class="card tile">
+        <p class="label">Tiempo en movimiento</p>
+        <p class="tile-value" id="stat-time">–</p>
+      </div>
+      <div class="card tile">
+        <p class="label">Desnivel acumulado</p>
+        <p class="tile-value" id="stat-elevation">–</p>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card chart-card wide">
+        <h2 id="volume-title">Distancia por semana</h2>
+        <p class="hint">Kilómetros de cada periodo. Pasa el ratón por encima para ver el detalle.</p>
+        <div class="chart" id="volume-chart"></div>
+        <details class="table-view">
+          <summary>Ver datos en tabla</summary>
+          <div class="table-wrap"><table id="volume-table"></table></div>
+        </details>
+      </article>
+
+      <article class="card chart-card">
+        <h2>Tiempo por deporte</h2>
+        <p class="hint">Horas en movimiento del periodo elegido.</p>
+        <div class="sport-bars" id="sport-bars"></div>
+      </article>
+
+      <article class="card chart-card">
+        <h2>Récords del periodo</h2>
+        <p class="hint">Lo más destacado de las actividades filtradas.</p>
+        <dl class="records" id="records"></dl>
+      </article>
+
+      <article class="card chart-card wide">
+        <h2>Últimas actividades</h2>
+        <div class="table-wrap"><table class="activities" id="activities"></table></div>
+      </article>
+    </section>
+
+    <p class="empty card" id="empty" hidden>No hay actividades en este periodo. Prueba con otro rango de fechas o deporte.</p>
+
+    <footer class="foot">Datos obtenidos de Strava. Solo se muestran actividades públicas, sin rutas ni mapas.</footer>
+  </main>
+
+  <div class="tooltip" id="tooltip" role="status" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>

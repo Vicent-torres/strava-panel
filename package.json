@@ -1,0 +1,13 @@
+{
+  "name": "strava-panel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Panel con los datos de mis actividades de Strava",
+  "scripts": {
+    "auth": "node scripts/auth.js",
+    "sync": "node scripts/sync.js",
+    "sample": "node scripts/sample.js",
+    "start": "node scripts/serve.js"
+  }
+}

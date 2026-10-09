@@ -1,0 +1,4 @@
+# Claves de Strava: nunca se suben a GitHub
+.env
+node_modules/
+.DS_Store
