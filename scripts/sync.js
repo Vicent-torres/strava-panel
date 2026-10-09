@@ -42,14 +42,23 @@ const activities = all
   }))
   .sort((x, y) => (x.date < y.date ? 1 : -1));
 
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(
-  OUT,
-  JSON.stringify({ athlete: { name: athlete.firstname }, syncedAt: new Date().toISOString(), activities }),
-);
-
 const hidden = all.length - activities.length;
-console.log(`✓ ${activities.length} salidas de ciclismo públicas guardadas en docs/data/strava.json`);
+const previous = fs.existsSync(OUT) ? JSON.parse(fs.readFileSync(OUT, 'utf8')) : null;
+const athleteData = { name: athlete.firstname };
+if (
+  previous &&
+  JSON.stringify(previous.activities) === JSON.stringify(activities) &&
+  JSON.stringify(previous.athlete) === JSON.stringify(athleteData)
+) {
+  console.log(`✓ Sin cambios: siguen siendo ${activities.length} salidas de ciclismo.`);
+  process.exit(0);
+}
+
+fs.mkdirSync(path.dirname(OUT), { recursive: true });
+fs.writeFileSync(OUT, JSON.stringify({ athlete: athleteData, syncedAt: new Date().toISOString(), activities }));
+
+const added = previous ? activities.length - previous.activities.length : activities.length;
+console.log(`✓ ${activities.length} salidas de ciclismo públicas guardadas en docs/data/strava.json${added > 0 ? ` (${added} nuevas)` : ''}`);
 if (hidden) console.log(`  (${hidden} de otros deportes o no públicas se han dejado fuera)`);
 
 async function getAccessToken() {

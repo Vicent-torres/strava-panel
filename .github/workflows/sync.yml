@@ -1,0 +1,46 @@
+# Descarga las actividades de Strava y publica el panel si hay novedades.
+# Se ejecuta cada noche y también a mano desde la pestaña Actions de GitHub.
+name: Actualizar datos de Strava
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 22 * * *" # 22:00 UTC: medianoche en España en verano, 23:00 en invierno
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency: strava-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Descargar actividades de Strava
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+        run: node scripts/sync.js
+
+      - name: Publicar si hay cambios
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "No hay actividades nuevas."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/strava.json
+          git commit -m "Actualizar datos de Strava"
+          git push
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || true

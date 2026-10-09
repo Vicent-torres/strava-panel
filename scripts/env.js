@@ -7,6 +7,8 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const ENV_PATH = path.join(ROOT, '.env');
 
 export function loadEnv() {
+  // En GitHub Actions no hay .env: las claves llegan como secretos del repositorio.
+  if (!fs.existsSync(ENV_PATH) && process.env.STRAVA_CLIENT_ID) return process.env;
   if (!fs.existsSync(ENV_PATH)) {
     console.error('No encuentro el archivo .env.');
     console.error('Copia .env.example como .env y rellena tu Client ID y Client Secret de Strava.');
@@ -17,6 +19,10 @@ export function loadEnv() {
 }
 
 export function setEnvVar(key, value) {
+  if (!fs.existsSync(ENV_PATH)) {
+    console.log(`::warning::Strava ha entregado un ${key} nuevo. Si la próxima actualización falla, vuelve a guardar los secretos con: gh secret set -f .env`);
+    return;
+  }
   const lines = fs.readFileSync(ENV_PATH, 'utf8').split('\n');
   const line = `${key}=${value}`;
   const i = lines.findIndex((l) => l.startsWith(`${key}=`));
