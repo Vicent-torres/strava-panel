@@ -105,6 +105,7 @@ async function loadData() {
 async function init() {
   const { data, sample } = await loadData();
   activities = data.activities.map((a) => ({ ...a, d: parseLocal(a.date) }));
+  hrZoneBounds = data.hrZoneBounds || null;
 
   $('sample-notice').hidden = !sample;
   if (!sample && data.athlete?.name) {
@@ -116,6 +117,7 @@ async function init() {
   buildFilters();
   render();
   new ResizeObserver(() => renderVolume(currentBins)).observe($('volume-chart'));
+  new ResizeObserver(() => renderZ2(currentHr, currentStart)).observe($('z2-chart'));
 }
 
 function buildFilters() {
@@ -179,6 +181,7 @@ function render() {
   renderVolumeTable(currentBins);
   renderSports(list);
   renderRecords(list);
+  renderHeart(list, start);
   renderActivities(list);
 }
 
@@ -406,7 +409,7 @@ function renderActivities(list) {
   const head = el('tr');
   head.append(el('th', {}, 'Fecha'), el('th', {}, 'Actividad'), el('th', {}, 'Deporte'),
     el('th', { class: 'num' }, 'Distancia'), el('th', { class: 'num' }, 'Tiempo'),
-    el('th', { class: 'num' }, 'Desnivel'), el('th', { class: 'num' }, 'Ritmo / velocidad'));
+    el('th', { class: 'num' }, 'Desnivel'), el('th', { class: 'num' }, 'Ritmo / velocidad'), el('th', { class: 'num' }, 'FC media'));
   const thead = el('thead');
   thead.append(head);
   table.append(thead);
@@ -421,10 +424,185 @@ function renderActivities(list) {
       el('td', { class: 'num' }, fmtDuration(a.movingTime)),
       el('td', { class: 'num' }, a.elevation ? `${nf0.format(a.elevation)} m` : '—'),
       el('td', { class: 'num' }, paceOrSpeed(a)),
+      el('td', { class: 'num' }, a.avgHr ? `${a.avgHr} ppm` : '—'),
     );
     body.append(tr);
   }
   table.append(body);
+}
+
+// ---------- Pulso y forma aeróbica ----------
+
+const ZONE_NAMES = ['Resistencia', 'Moderada', 'Tempo', 'Umbral', 'Anaeróbica'];
+let hrZoneBounds = null;
+let currentHr = [];
+let currentStart = null;
+
+function zoneRange(i) {
+  if (!hrZoneBounds) return '';
+  const lo = hrZoneBounds[i];
+  const next = hrZoneBounds[i + 1];
+  if (i === 0) return `< ${next} ppm`;
+  if (next == null) return `≥ ${lo} ppm`;
+  return `${lo}–${next - 1} ppm`;
+}
+
+function renderHeart(list, start) {
+  const withHr = list.filter((a) => a.avgHr);
+  const has = withHr.length > 0;
+  for (const card of document.querySelectorAll('.hr-card')) card.hidden = !has;
+  $('hr-empty').hidden = has;
+  currentHr = withHr;
+  currentStart = start;
+  if (!has) return;
+
+  const time = withHr.reduce((s, a) => s + a.movingTime, 0);
+  const avg = withHr.reduce((s, a) => s + a.avgHr * a.movingTime, 0) / time;
+  const max = withHr.reduce((best, a) => (a.maxHr > best.maxHr ? a : best), withHr[0]);
+  $('hr-avg').textContent = `${Math.round(avg)} ppm`;
+  $('hr-max').textContent = `${max.maxHr} ppm`;
+  $('hr-max').title = `${max.name} · ${fullShortDate(max.d)}`;
+  $('hr-count').textContent = `${withHr.length} de ${list.length}`;
+
+  // tiempo por zona, sumando todas las salidas del periodo
+  const zones = [0, 0, 0, 0, 0];
+  for (const a of withHr) a.hrZones?.forEach((t, i) => { if (i < 5) zones[i] += t; });
+  const zoneTotal = zones.reduce((s, t) => s + t, 0);
+  $('hr-easy').textContent = zoneTotal ? `${nf0.format(((zones[0] + zones[1]) / zoneTotal) * 100)} %` : '—';
+  renderZones(zones, zoneTotal);
+  renderZ2(withHr, start);
+}
+
+const fmtPct = (pct) => (pct > 0 && pct < 1 ? '< 1 %' : `${nf0.format(pct)} %`);
+
+function renderZones(zones, total) {
+  const box = $('zone-bars');
+  box.replaceChildren();
+  const max = Math.max(...zones, 1);
+  zones.forEach((t, i) => {
+    const pct = total ? (t / total) * 100 : 0;
+    const name = `Z${i + 1} ${ZONE_NAMES[i]}`;
+    const row = el('div', { class: 'zone-row', tabindex: 0, 'aria-label': `${name}: ${fmtDuration(t)}, ${fmtPct(pct)}` });
+    const label = el('span', { class: 'zone-name' }, name);
+    label.append(el('small', {}, zoneRange(i)));
+    const track = el('div', { class: 'zone-track' });
+    const bar = el('div', { class: 'zone-bar' });
+    bar.style.width = `calc((100% - 120px) * ${t / max})`;
+    bar.style.background = `var(--z${i + 1})`;
+    track.append(bar, el('span', { class: 'zone-value' }, `${fmtDuration(t)} · ${fmtPct(pct)}`));
+    row.append(label, track);
+
+    const show = () => {
+      const rect = bar.getBoundingClientRect();
+      showTip(rect.right, rect.top, fmtPct(pct), `${name} (${zoneRange(i)})`, fmtDuration(t));
+    };
+    row.addEventListener('pointerenter', show);
+    row.addEventListener('pointerleave', hideTip);
+    row.addEventListener('focus', show);
+    row.addEventListener('blur', hideTip);
+    box.append(row);
+  });
+}
+
+function linearFit(points) {
+  const n = points.length;
+  const mx = points.reduce((s, p) => s + p.x, 0) / n;
+  const my = points.reduce((s, p) => s + p.y, 0) / n;
+  const sxx = points.reduce((s, p) => s + (p.x - mx) ** 2, 0);
+  const slope = sxx ? points.reduce((s, p) => s + (p.x - mx) * (p.y - my), 0) / sxx : 0;
+  return (x) => my + slope * (x - mx);
+}
+
+function renderZ2(withHr, start) {
+  const box = $('z2-chart');
+  const insight = $('z2-insight');
+  if (!withHr || box.offsetParent === null) return;
+  const points = withHr.filter((a) => a.z2Speed).map((a) => ({ a, x: a.d.getTime(), y: a.z2Speed })).sort((p, q) => p.x - q.x);
+
+  if (points.length === 0) {
+    insight.textContent = 'Ninguna salida de este periodo tiene al menos 10 minutos en llano y en zona 2. Prueba con un periodo más largo.';
+    box.replaceChildren();
+    box.style.minHeight = '0';
+    return;
+  }
+  box.style.minHeight = '';
+
+  // con pocas salidas, el viento o ir en grupo pesan más que la forma: no se saca tendencia
+  const MIN_POINTS = 6;
+  const first = points[0];
+  const last = points.at(-1);
+  const fit = points.length >= MIN_POINTS ? linearFit(points) : null;
+  const from = fit?.(first.x);
+  const to = fit?.(last.x);
+  insight.replaceChildren();
+  if (fit) {
+    const diff = to - from;
+    insight.append(`Con el mismo pulso de zona 2, ahora vas a unos ${nf1.format(to)} km/h en llano: `);
+    const delta = el('span', { class: `delta ${diff >= 0 ? 'up' : 'down'}` },
+      `${diff >= 0 ? '↑ +' : '↓ −'}${nf1.format(Math.abs(diff))} km/h (${diff >= 0 ? '+' : '−'}${nf0.format(Math.abs((diff / from) * 100))} %)`);
+    insight.append(delta, ` desde el ${fullShortDate(first.a.d)}.`);
+  } else {
+    insight.textContent = `Solo ${points.length} ${points.length === 1 ? 'salida' : 'salidas'} con datos en este periodo: hacen falta ${MIN_POINTS} para una tendencia fiable. Elige un periodo más largo.`;
+  }
+
+  const W = Math.max(280, box.clientWidth);
+  const H = 260;
+  const m = { t: 28, r: 12, b: 30, l: 48 };
+  const iw = W - m.l - m.r;
+  const ih = H - m.t - m.b;
+  const ys = points.map((p) => p.y);
+  const lo = Math.floor(Math.min(...ys) - 1);
+  const hi = Math.ceil(Math.max(...ys) + 1);
+  const step = niceScale(hi - lo).step;
+  const yMin = Math.floor(lo / step) * step;
+  const yMax = Math.ceil(hi / step) * step;
+  const x0 = Math.min(start.getTime(), first.x);
+  const x1 = Date.now();
+  const x = (v) => m.l + ((v - x0) / (x1 - x0)) * iw;
+  const y = (v) => m.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+
+  const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img', 'aria-label': 'Velocidad en llano en zona 2 por salida, con línea de tendencia' });
+  for (let v = yMin; v <= yMax + 1e-9; v += step) {
+    root.append(svg('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), class: v === yMin ? 'axis-line' : 'grid-line' }));
+    root.append(svg('text', { x: m.l - 8, y: y(v) + 4, 'text-anchor': 'end', class: 'tick' }, nf0.format(v)));
+  }
+  root.append(svg('text', { x: m.l - 8, y: 12, 'text-anchor': 'end', class: 'tick' }, 'km/h'));
+
+  // marcas de mes en el eje X, espaciadas para que no se pisen
+  const months = [];
+  for (let d = new Date(new Date(x0).getFullYear(), new Date(x0).getMonth() + 1, 1); d.getTime() <= x1; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) months.push(d);
+  const every = Math.max(1, Math.ceil(months.length / Math.max(1, Math.floor(iw / 64))));
+  months.forEach((d, i) => {
+    if (i % every) return;
+    root.append(svg('text', { x: x(d.getTime()), y: H - 8, 'text-anchor': 'middle', class: 'tick' }, `${MONTHS[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`));
+  });
+
+  if (fit) root.append(svg('path', { d: `M${x(first.x)},${y(from)}L${x(last.x)},${y(to)}`, class: 'trend' }));
+
+  for (const p of points) {
+    const cx = x(p.x);
+    const cy = y(p.y);
+    const dot = svg('circle', { cx, cy, r: 4.5, class: 'dot' });
+    const hit = svg('circle', {
+      cx, cy, r: 12, fill: 'transparent', tabindex: 0, class: 'hit',
+      'aria-label': `${p.a.name}, ${fullShortDate(p.a.d)}: ${nf1.format(p.y)} km/h`,
+    });
+    const show = () => {
+      dot.classList.add('active');
+      const r = dot.getBoundingClientRect();
+      showTip(r.left + r.width / 2, r.top, `${nf1.format(p.y)} km/h`, p.a.name, `${fullShortDate(p.a.d)} · FC media ${p.a.avgHr} ppm`);
+    };
+    const hide = () => {
+      dot.classList.remove('active');
+      hideTip();
+    };
+    hit.addEventListener('pointerenter', show);
+    hit.addEventListener('pointerleave', hide);
+    hit.addEventListener('focus', show);
+    hit.addEventListener('blur', hide);
+    root.append(dot, hit);
+  }
+  box.replaceChildren(root);
 }
 
 // ---------- Mapa de recorridos ----------

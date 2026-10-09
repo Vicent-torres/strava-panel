@@ -11,6 +11,9 @@
   --series: #2a78d6;
   --series-hover: #184f95;
   --wash: rgba(42, 120, 214, 0.10);
+  --z1: #86b6ef; --z2: #5598e7; --z3: #2a78d6; --z4: #1c5cab; --z5: #104281;
+  --up: #006300;
+  --down: #d03b3b;
   --radius: 14px;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
@@ -28,6 +31,8 @@
     --series: #3987e5;
     --series-hover: #86b6ef;
     --wash: rgba(57, 135, 229, 0.16);
+    --z1: #184f95; --z2: #256abf; --z3: #3987e5; --z4: #6da7ec; --z5: #9ec5f4;
+    --up: #0ca30c;
   }
   :root:not([data-theme="light"]) .map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.85) contrast(0.9); }
 }
@@ -43,6 +48,8 @@
   --series: #3987e5;
   --series-hover: #86b6ef;
   --wash: rgba(57, 135, 229, 0.16);
+  --z1: #184f95; --z2: #256abf; --z3: #3987e5; --z4: #6da7ec; --z5: #9ec5f4;
+  --up: #0ca30c;
 }
 :root[data-theme="dark"] .map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(0.85) contrast(0.9); }
 
@@ -135,6 +142,29 @@ button:focus-visible, select:focus-visible, summary:focus-visible, .hit:focus-vi
 .records dd.value { font-size: 22px; font-weight: 600; margin-top: 2px; }
 .records dd.detail { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Pulso */
+.section-title { font-size: 20px; font-weight: 650; margin: 12px 0 -4px; }
+.hr-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.hr-stats div { border-top: 1px solid var(--grid); padding-top: 10px; }
+.hr-stats dt { font-size: 13px; color: var(--ink-2); }
+.hr-stats dd { font-size: 24px; font-weight: 600; margin-top: 2px; }
+.zone-bars { display: grid; gap: 10px; }
+.zone-row { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; border-radius: 6px; }
+.zone-row:hover, .zone-row:focus-visible { background: var(--wash); outline: none; }
+.zone-name { font-size: 14px; }
+.zone-name small { display: block; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.zone-track { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.zone-bar { height: 14px; border-radius: 0 4px 4px 0; flex: none; min-width: 2px; }
+.zone-value { font-size: 13px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.insight { font-size: 15px; margin: -4px 0 12px; }
+.insight .delta { font-weight: 650; white-space: nowrap; }
+.insight .delta.up { color: var(--up); }
+.insight .delta.down { color: var(--down); }
+.chart .dot { fill: var(--series); stroke: var(--surface); stroke-width: 2; }
+.chart .dot.active { fill: var(--series-hover); }
+.chart .trend { stroke: var(--ink-2); stroke-width: 2; fill: none; stroke-linecap: round; }
+.hr-empty { text-align: center; color: var(--ink-2); }
+
 /* Tablas */
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -179,4 +209,6 @@ td.muted { color: var(--muted); }
   .sport-row { grid-template-columns: 92px 1fr; }
   .records, .wide .records { grid-template-columns: 1fr; }
   .map { height: 340px; }
+  .hr-stats { grid-template-columns: 1fr; }
+  .zone-row { grid-template-columns: 112px 1fr; }
 }

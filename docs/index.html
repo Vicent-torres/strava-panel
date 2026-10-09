@@ -79,6 +79,34 @@
         <dl class="records" id="records"></dl>
       </article>
 
+      <h2 class="section-title wide" id="hr-title">Pulso y forma aeróbica</h2>
+
+      <article class="card chart-card hr-card">
+        <h2>Frecuencia cardiaca</h2>
+        <p class="hint" id="hr-hint">Media ponderada por el tiempo de cada salida.</p>
+        <dl class="hr-stats">
+          <div><dt>FC media</dt><dd id="hr-avg">–</dd></div>
+          <div><dt>FC máxima</dt><dd id="hr-max">–</dd></div>
+          <div><dt>Salidas con pulsómetro</dt><dd id="hr-count">–</dd></div>
+          <div><dt>Tiempo en zona 1–2</dt><dd id="hr-easy">–</dd></div>
+        </dl>
+      </article>
+
+      <article class="card chart-card hr-card">
+        <h2>Tiempo en zonas de pulso</h2>
+        <p class="hint">Tus zonas de Strava. Horas en cada una durante el periodo.</p>
+        <div class="zone-bars" id="zone-bars"></div>
+      </article>
+
+      <article class="card chart-card wide hr-card">
+        <h2>Capacidad aeróbica</h2>
+        <p class="hint">Velocidad media en llano con el pulso en zona 2. Cada punto es una salida y la línea gris, la tendencia. Si con el mismo pulso vas más rápido, tu capacidad aeróbica mejora. El viento o rodar en grupo hacen variar cada salida: fíjate en la tendencia de periodos largos.</p>
+        <p class="insight" id="z2-insight"></p>
+        <div class="chart" id="z2-chart"></div>
+      </article>
+
+      <p class="card hr-empty wide" id="hr-empty" hidden>No hay salidas con pulsómetro en este periodo.</p>
+
       <article class="card chart-card wide">
         <h2>Últimas actividades</h2>
         <div class="table-wrap"><table class="activities" id="activities"></table></div>
