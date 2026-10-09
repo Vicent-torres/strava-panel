@@ -117,6 +117,7 @@ button:focus-visible, select:focus-visible, summary:focus-visible, .hit:focus-vi
 .sport-value { font-size: 13px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 .records { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.wide .records { grid-template-columns: repeat(4, 1fr); }
 .records div { border-top: 1px solid var(--grid); padding-top: 10px; }
 .records dt { font-size: 13px; color: var(--ink-2); }
 .records dd.value { font-size: 22px; font-weight: 600; margin-top: 2px; }
@@ -155,6 +156,7 @@ td.muted { color: var(--muted); }
   .stats { grid-template-columns: 1fr 1fr; }
   .hero { grid-column: 1 / -1; }
   .grid { grid-template-columns: 1fr; }
+  .wide .records { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
   .page { padding-top: 20px; }
@@ -163,5 +165,5 @@ td.muted { color: var(--muted); }
   .tile-value { font-size: 22px; }
   .card { padding: 16px; }
   .sport-row { grid-template-columns: 92px 1fr; }
-  .records { grid-template-columns: 1fr; }
+  .records, .wide .records { grid-template-columns: 1fr; }
 }

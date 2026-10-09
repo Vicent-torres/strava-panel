@@ -1,11 +1,13 @@
 // Descarga tus actividades de Strava y las guarda en docs/data/strava.json,
-// que es lo que lee el panel. Solo guarda actividades públicas ("Todos")
-// y nunca rutas, mapas, coordenadas ni pulsaciones.
+// que es lo que lee el panel. Solo guarda salidas de ciclismo públicas
+// ("Todos") y nunca rutas, mapas, coordenadas ni pulsaciones.
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, loadEnv, setEnvVar } from './env.js';
 
 const OUT = path.join(ROOT, 'docs', 'data', 'strava.json');
+// Deportes que se muestran en el panel (ciclismo en exterior; sin rodillo).
+const SPORTS = new Set(['Ride', 'GravelRide', 'MountainBikeRide', 'EBikeRide', 'EMountainBikeRide']);
 const env = loadEnv();
 
 if (!env.STRAVA_REFRESH_TOKEN) {
@@ -27,7 +29,7 @@ process.stdout.write('\n');
 
 const isPublic = (a) => (a.visibility ? a.visibility === 'everyone' : !a.private);
 const activities = all
-  .filter(isPublic)
+  .filter((a) => isPublic(a) && SPORTS.has(a.sport_type || a.type))
   .map((a) => ({
     id: a.id,
     name: a.name,
@@ -47,8 +49,8 @@ fs.writeFileSync(
 );
 
 const hidden = all.length - activities.length;
-console.log(`✓ ${activities.length} actividades públicas guardadas en docs/data/strava.json`);
-if (hidden) console.log(`  (${hidden} no públicas se han dejado fuera)`);
+console.log(`✓ ${activities.length} salidas de ciclismo públicas guardadas en docs/data/strava.json`);
+if (hidden) console.log(`  (${hidden} de otros deportes o no públicas se han dejado fuera)`);
 
 async function getAccessToken() {
   const r = await fetch('https://www.strava.com/oauth/token', {

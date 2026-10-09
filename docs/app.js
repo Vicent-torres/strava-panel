@@ -132,6 +132,12 @@ function buildFilters() {
 
   const counts = new Map();
   for (const a of activities) counts.set(a.sport, (counts.get(a.sport) || 0) + 1);
+  // con un solo deporte, el filtro y el reparto por deporte sobran
+  const single = counts.size <= 1;
+  $('sport').closest('label').hidden = single;
+  $('sport-card').hidden = single;
+  $('records-card').classList.toggle('wide', single);
+
   const select = $('sport');
   select.append(el('option', { value: 'all' }, 'Todos los deportes'));
   for (const [sport] of [...counts].sort((x, y) => y[1] - x[1])) {
@@ -372,6 +378,11 @@ function renderRecords(list) {
   if (a2.elevation > 0) records.push(['Más desnivel', `${nf0.format(a2.elevation)} m`, a2]);
   const a3 = maxBy(list, (x) => x.movingTime);
   records.push(['Más tiempo', fmtDuration(a3.movingTime), a3]);
+  const rides = list.filter((a) => SPEED_SPORTS.has(a.sport) && a.distance >= 20000);
+  if (rides.length) {
+    const a = maxBy(rides, (x) => x.distance / x.movingTime);
+    records.push(['Mejor velocidad media (≥ 20 km)', `${nf1.format(a.distance / 1000 / (a.movingTime / 3600))} km/h`, a]);
+  }
   const runs = list.filter((a) => RUN_SPORTS.has(a.sport) && a.distance >= 5000);
   if (runs.length) {
     const a = maxBy(runs, (x) => x.distance / x.movingTime);
